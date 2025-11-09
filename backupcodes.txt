@@ -1,0 +1,625 @@
+///home/sidhu/Desktop/SmartEnergy.Web/SmartEnergy.Web/Views/LiveReading/Index.cshtml
+@*@{
+    ViewBag.Title = "Live Energy Reading";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #f0f4f8, #d9e2ec);
+        color: #333;
+    }
+
+    h2 {
+        text-align: center;
+        margin-top: 30px;
+        font-weight: 600;
+        color: #1a202c;
+    }
+
+    #readingContainer {
+        max-width: 450px;
+        margin: 40px auto;
+        padding: 25px 30px;
+        background: #ffffffcc;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    #readingContainer:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.12);
+    }
+
+    .reading {
+        font-size: 1.3em;
+        margin: 15px 0;
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 15px;
+        border-radius: 8px;
+        background: #f1f5f9;
+        transition: background 0.3s ease;
+    }
+
+    .reading span.value {
+        font-weight: 600;
+        transition: all 0.5s ease;
+    }
+
+    .reading p {
+        margin: 0;
+    }
+</style>
+
+<h2>Live Energy Monitoring</h2>
+
+<div id="readingContainer">
+    <div class="reading"><p>Voltage:</p> <span id="voltage" class="value">--</span> V</div>
+    <div class="reading"><p>Current:</p> <span id="current" class="value">--</span> A</div>
+    <div class="reading"><p>Power:</p> <span id="power" class="value">--</span> W</div>
+    <div class="reading"><p>Device Type:</p> <span id="deviceType" class="value">--</span></div>
+    <div class="reading"><p>Timestamp:</p> <span id="timestamp" class="value">--</span></div>
+</div>
+
+<div class="col-lg-12 mt-4">
+    <div class="live-card" id="energySuggestion">
+        <div class="live-card-top">
+            <span class="live-title">Energy Consumption</span>
+            <span class="live-icon">🌍</span>
+            <button onclick="analyzeNow()">Analyze Consumption</button>
+
+        </div>
+        <div class="live-value" id="consumptionLevel">--</div>
+        <div class="live-sub" id="consumptionTip">Analyzing...</div>
+    </div>
+</div>
+
+
+<!-- Chat Section -->
+<div class="chat-card">
+    <div class="chat-header">
+        <i class="bi bi-robot me-2"></i> <b>AI Chat Assistant</b>
+    </div>
+
+    <div id="chatBox" class="chat-box"></div>
+
+    <div class="chat-input-bar">
+        <input type="text" id="userMessage" class="form-control chat-input" placeholder="Ask me anything..." />
+        <button id="sendBtn" class="btn chat-send">
+            <i class="bi bi-send"></i>
+        </button>
+    </div>
+</div>
+
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+    // Firebase Config
+    const firebaseConfig = {
+        databaseURL: "https://esp32-testing-aec8b-default-rtdb.firebaseio.com" 
+    };
+
+    const app = firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    const deviceId = "ESP32-001";
+
+    function fetchLiveReading() {
+        const readingRef = database.ref('readings/' + deviceId);
+        readingRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                animateValue('voltage', data.voltage.toFixed(1));
+                animateValue('current', data.current.toFixed(4));
+                animateValue('power', data.power.toFixed(2));
+                animateValue('deviceType', data.deviceType || "Unknown");
+                const date = new Date(data.timestamp);
+                animateValue('timestamp', date.toLocaleTimeString());
+            }
+        });
+    }
+
+    function animateValue(id, newValue) {
+        const el = document.getElementById(id);
+        if (el.innerText !== newValue) {
+            el.style.transition = 'all 0.5s ease';
+            el.style.transform = 'scale(1.2)';
+            setTimeout(() => el.style.transform = 'scale(1)', 500);
+            el.innerText = newValue;
+        }
+    }
+
+    fetchLiveReading();
+</script>
+<script>
+    // If you already define these elsewhere, keep only one copy.
+    const chatBox = document.getElementById("chatBox");
+    const userMessage = document.getElementById("userMessage");
+    const sendBtn = document.getElementById("sendBtn");
+
+    // 🔗 Your live-reading endpoint
+    const endpoint = '@Url.Action("Latest", "EnergyReadingView")';
+
+    // Small helper used in your UI
+    function fmt(val, unit, decimals) {
+        if (val === null || val === undefined) return '--';
+        return Number(val).toFixed(decimals) + ' ' + unit;
+    }
+
+    // ---- Chat ----
+    sendBtn.addEventListener("click", sendMessage);
+    userMessage.addEventListener("keypress", function (e) {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    function appendMessage(sender, message, isError = false) {
+        const div = document.createElement("div");
+        div.classList.add("chat-message", sender.toLowerCase());
+        if (isError) div.classList.add("error");
+        div.innerHTML = `<b>${sender}:</b> ${message}`;
+        chatBox.appendChild(div);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function sendMessage() {
+        const message = userMessage.value.trim();
+        if (!message) return;
+
+        appendMessage("You", message);
+        userMessage.value = "";
+
+        fetch("/Llama/Chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ Question: message }) // must match C# model property
+        })
+        .then(res => {
+            if (!res.ok) throw new Error("Network response was not ok");
+            return res.json();
+        })
+        .then(data => {
+            if (data.error) {
+                appendMessage("Error", data.error, true);
+            } else {
+                // data.reply expected from your Flask API
+                appendMessage("AI", data.reply ?? JSON.stringify(data));
+            }
+        })
+        .catch(err => {
+            appendMessage("Error", err.message, true);
+        });
+    } // ✅ CLOSE sendMessage properly
+
+    // ---- Live readings + analysis ----
+    async function refresh() {
+        try {
+            const res = await fetch(endpoint, { cache: 'no-store' });
+            if (!res.ok) return;
+
+            const d = await res.json();
+            if (!d.hasData) {
+                document.getElementById('lastTime').innerText = 'No data yet';
+                return;
+            }
+
+            document.getElementById('voltageVal').innerText = fmt(d.voltage, 'V', 1);
+            document.getElementById('currentVal').innerText = fmt(d.current, 'A', 1);
+            document.getElementById('powerVal').innerText   = fmt(d.power, 'kW', 2);
+            document.getElementById('lastTime').innerText   = new Date(d.timestamp).toLocaleString();
+
+            // Show analyzing while we fetch
+            const levelEl = document.getElementById('consumptionLevel');
+            const tipEl = document.getElementById('consumptionTip');
+            if (levelEl && tipEl) {
+                levelEl.innerText = 'Analyzing...';
+                tipEl.innerText = 'Analyzing...';
+            }
+
+            // 🔑 Send reading to backend for analysis
+            const analysisRes = await fetch("/Llama/AnalyzeReading", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    voltage: d.voltage,
+                    current: d.current,
+                    power: d.power
+                })
+            });
+
+            // If the controller returns plain text instead of JSON, this will throw
+            let analysis;
+            try {
+                analysis = await analysisRes.json();
+            } catch {
+                // Fallback: show raw text
+                const raw = await analysisRes.text();
+                if (levelEl) levelEl.innerText = '—';
+                if (tipEl) tipEl.innerText = raw || 'No tip available';
+                return;
+            }
+
+            // Supports both shapes:
+            // 1) { consumptionLevel, tip }
+            // 2) { reply } from AI
+            const level = analysis.consumptionLevel ?? '—';
+            const tip = analysis.tip ?? analysis.reply ?? 'No tip available';
+
+            if (levelEl) levelEl.innerText = level;
+            if (tipEl) tipEl.innerText = tip;
+
+        } catch (e) {
+            console.warn(e);
+            const levelEl = document.getElementById('consumptionLevel');
+            const tipEl = document.getElementById('consumptionTip');
+            if (levelEl) levelEl.innerText = 'Unavailable';
+            if (tipEl) tipEl.innerText = 'Could not fetch analysis';
+        }
+    }
+
+    // 🔁 Actually run it
+    refresh();
+    //setInterval(refresh, 3000);
+</script>
+<style>
+    .reading-card {
+        border-radius: 12px;
+        border: 1px solid rgba(0,0,0,.08);
+        box-shadow: 0 2px 8px rgba(0,0,0,.05);
+    }
+
+    .chat-box input {
+        border-radius: 12px;
+        padding: 10px;
+    }
+
+    .chat-box button {
+        border-radius: 12px;
+        background: #f46b45;
+        border: none;
+    }
+
+        .chat-box button:hover {
+            background: #e75a36;
+        }
+
+      .live-page {
+    background: #ecf6f7;
+    padding: 0.5rem 0 2rem 0;
+}
+.live-card {
+    background: #fff;
+    border: 1px solid rgba(0,0,0,.06);
+    border-radius: 18px;
+    padding: 22px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.04);
+    height: 100%;
+}
+.live-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: .35rem;
+}
+.live-title {
+    color: #7b6d66;
+    font-weight: 600;
+}
+.live-icon {
+    color: #cf6e39;
+    font-size: 1.2rem;
+}
+.live-value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #3b2e2a;
+}
+.live-sub {
+    color: #a08f86;
+    font-size: .9rem;
+}
+
+
+.chat-card {
+    max-width: 1700px;
+    margin: 20px auto;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    padding: 15px;
+}
+
+.chat-header {
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    color: #333;
+}
+
+.chat-box {
+    height: 300px;
+    overflow-y: auto;
+    background: #f9f9f9;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+.chat-input-bar {
+    display: flex;
+    align-items: center;
+    border-radius: 8px;
+    padding: 6px;
+    border: 1px solid #e5e5e5;
+}
+
+.chat-input {
+    flex: 1;
+    border: none;
+    outline: none;
+}
+
+.chat-send {
+    background: #ff6b4a;
+    color: white;
+    border-radius: 8px;
+    margin-left: 8px;
+}
+
+.chat-send:hover {
+    background: #ff5630;
+}
+
+/* Messages */
+.chat-message {
+    margin: 8px 0;
+    padding: 10px 14px;
+    border-radius: 12px;
+    max-width: 70%;
+    word-wrap: break-word;
+}
+
+.chat-message.user {
+    background: #007bff;
+    color: white;
+    margin-left: auto;
+}
+
+.chat-message.ai {
+    background: #e9ecef;
+    color: #212529;
+    margin-right: auto;
+}
+
+.chat-message.error {
+    background: #f8d7da;
+    color: #842029;
+    margin-right: auto;
+}
+</style>
+
+
+@{
+    ViewBag.Title = "Live Energy Reading";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #f0f4f8, #d9e2ec);
+        color: #333;
+    }
+
+    h2 {
+        text-align: center;
+        margin-top: 30px;
+        font-weight: 600;
+        color: #1a202c;
+    }
+
+    #readingContainer {
+        max-width: 450px;
+        margin: 40px auto;
+        padding: 25px 30px;
+        background: #ffffffcc;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    #readingContainer:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.12);
+    }
+
+    .reading {
+        font-size: 1.3em;
+        margin: 15px 0;
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 15px;
+        border-radius: 8px;
+        background: #f1f5f9;
+        transition: background 0.3s ease;
+    }
+
+    .reading span.value {
+        font-weight: 600;
+        transition: all 0.5s ease;
+    }
+
+    .reading p {
+        margin: 0;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 0.9em;
+        font-weight: 600;
+        margin: 10px 0;
+    }
+
+    .status-connected {
+        background: #10b981;
+        color: white;
+    }
+
+    .status-disconnected {
+        background: #ef4444;
+        color: white;
+    }
+
+    .status-analyzing {
+        background: #f59e0b;
+        color: white;
+    }
+
+    .live-page {
+        background: #ecf6f7;
+        padding: 0.5rem 0 2rem 0;
+    }
+
+    .live-card {
+        background: #fff;
+        border: 1px solid rgba(0,0,0,.06);
+        border-radius: 18px;
+        padding: 22px;
+        box-shadow: 0 2px 10px rgba(0,0,0,.04);
+        height: 100%;
+    }
+
+    .live-card-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: .35rem;
+    }
+
+    .live-title {
+        color: #7b6d66;
+        font-weight: 600;
+    }
+
+    .live-icon {
+        color: #cf6e39;
+        font-size: 1.2rem;
+    }
+
+    .live-value {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #3b2e2a;
+    }
+
+    .live-sub {
+        color: #a08f86;
+        font-size: .9rem;
+    }
+
+    .chat-card {
+        max-width: 1700px;
+        margin: 20px auto;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        padding: 15px;
+    }
+
+    .chat-header {
+        font-size: 1.1rem;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        color: #333;
+    }
+
+    .chat-box {
+        height: 300px;
+        overflow-y: auto;
+        background: #f9f9f9;
+        border-radius: 8px;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+
+    .chat-input-bar {
+        display: flex;
+        align-items: center;
+        border-radius: 8px;
+        padding: 6px;
+        border: 1px solid #e5e5e5;
+    }
+
+    .chat-input {
+        flex: 1;
+        border: none;
+        outline: none;
+    }
+
+    .chat-send {
+        background: #ff6b4a;
+        color: white;
+        border-radius: 8px;
+        margin-left: 8px;
+    }
+
+    .chat-send:hover {
+        background: #ff5630;
+    }
+
+    .chat-message {
+        margin: 8px 0;
+        padding: 10px 14px;
+        border-radius: 12px;
+        max-width: 70%;
+        word-wrap: break-word;
+    }
+
+    .chat-message.you {
+        background: #007bff;
+        color: white;
+        margin-left: auto;
+    }
+
+    .chat-message.ai {
+        background: #e9ecef;
+        color: #212529;
+        margin-right: auto;
+    }
+
+    .chat-message.error {
+        background: #f8d7da;
+        color: #842029;
+        margin-right: auto;
+    }
+
+    .analyze-btn {
+        padding: 8px 16px;
+        background: #10b981;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: background 0.3s ease;
+    }
+
+    .analyze-btn:hover {
+        background: #059669;
+    }
+
+    .analyze-btn:disabled {
+        background: #9ca3af;
+        cursor: not-allowed;
+    }
+</style>*@
