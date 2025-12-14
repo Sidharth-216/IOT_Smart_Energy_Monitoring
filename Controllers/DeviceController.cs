@@ -17,6 +17,17 @@ namespace SmartEnergy.Web.Controllers
             var devices = _dataService.GetAllDevices();
             return View(devices);
         }
+        //public IActionResult Dashboard()
+        //{
+           // var readings = _dataService.GetLatestReadings(50); // or any number
+            //return View(readings); // ✅ Pass the readings to the view
+            // }
+        public IActionResult Dashboard()
+        {
+            var devices = _dataService.GetAllDevices();
+            return View(devices);
+        }
+
 
         public IActionResult Details(int id)
         {

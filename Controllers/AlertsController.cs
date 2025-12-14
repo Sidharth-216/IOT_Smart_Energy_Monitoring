@@ -1,30 +1,50 @@
+
 using Microsoft.AspNetCore.Mvc;
-using SmartEnergy.Web.Services;
+using SmartEnergy.Web.Data;
+using SmartEnergy.Web.Models;
+using System.Threading.Tasks;
+using System.Linq;
 
-public class AlertsController : Controller
+namespace SmartEnergy.Web.Controllers
 {
-    private readonly IAlertService _alertService;
-
-    public AlertsController(IAlertService alertService)
+    public class AlertsController : Controller
     {
-        _alertService = alertService;
-    }
+        private readonly ApplicationDbContext _context;
 
-    public IActionResult Index()
-    {
-        var alerts = _alertService.GetAllAlerts();
-        return View(alerts);
-    }
+        public AlertsController(ApplicationDbContext context)
+        {
+            _context = context;
+        }
 
-    public IActionResult MarkAsRead(int id)
-    {
-        _alertService.MarkAlertAsRead(id);
-        return RedirectToAction("Index");
-    }
+        // GET: /Alert/
+        public IActionResult Index()
+        {
+            var alerts = _context.Alerts.OrderByDescending(a => a.Timestamp).ToList();
+            return View(alerts);
+        }
 
-    public IActionResult Clear(int id)
-    {
-        _alertService.ClearAlert(id);
-        return RedirectToAction("Index");
+        // GET: /Alert/Create
+        public IActionResult Create()
+        {
+            return View();
+        }
+
+        // POST: /Alert/Create
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(Alert alert)
+        {
+            if (ModelState.IsValid)
+            {
+                alert.Timestamp = DateTime.Now;
+                _context.Alerts.Add(alert);
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
+            }
+
+            return View(alert);
+        }
     }
 }
+
+

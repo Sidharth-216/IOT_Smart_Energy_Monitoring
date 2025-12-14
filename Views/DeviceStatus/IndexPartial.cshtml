@@ -1,0 +1,21 @@
+@model SmartEnergy.Web.Models.DeviceStatus
+
+<h4>Device ID: <span id="deviceId">@Model.DeviceId</span></h4>
+<h5>Device Type: <span id="deviceType">@Model.DeviceType</span></h5>
+
+@if (Model.IsConnected)
+{
+    <span class="badge bg-success" style="font-size:20px;">
+        ✔ Device Connected
+    </span>
+}
+else
+{
+    <span class="badge bg-danger" style="font-size:20px;">
+        ✖ Device Not Connected
+    </span>
+}
+
+<div id="lastUpdated" class="mt-2" style="font-size:14px; color:gray;">
+    Last check: @DateTime.Now.ToString("HH:mm:ss")
+</div>

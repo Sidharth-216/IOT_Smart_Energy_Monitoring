@@ -1,0 +1,152 @@
+@model SmartEnergy.Web.Models.DeviceStatus
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Device Connection Status</title>
+    <style>
+        /* ===== Body & General ===== */
+        body {
+            background-color: #1e1e2f;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 40px auto;
+            padding: 0 15px;
+        }
+
+        .page-title {
+            color: #4dd0e1; /* Thunderbolt cyan accent */
+            text-align: center;
+        }
+
+        .divider {
+            border-top: 1px solid #444;
+            margin-bottom: 20px;
+        }
+
+        /* ===== Card Styling ===== */
+        .status-card {
+            background-color: #2a2a3f;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .status-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+        }
+
+        /* ===== Badge Styling ===== */
+        .badge {
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 18px;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        .badge-connected {
+            background-color: #4dd0e1; /* Thunderbolt cyan */
+            color: #1b1b2d;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .badge-disconnected {
+            background-color: #ef5350; /* Red alert */
+            color: #fff;
+        }
+
+        /* ===== Keyframes for Connected Badge Pulse ===== */
+        @@keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0px rgba(77, 208, 225, 0.7); }
+            50% { transform: scale(1.05); box-shadow: 0 0 10px rgba(77, 208, 225, 0.7); }
+            100% { transform: scale(1); box-shadow: 0 0 0px rgba(77, 208, 225, 0.7); }
+        }
+
+        /* ===== Last Updated ===== */
+        .last-updated {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #aaaaaa;
+        }
+
+        /* ===== Responsive Media Queries ===== */
+        @@media (max-width: 768px) {
+            .status-card {
+                padding: 20px;
+            }
+            .badge {
+                font-size: 16px;
+                padding: 6px 12px;
+            }
+            .page-title {
+                font-size: 22px;
+            }
+        }
+
+        @@media (max-width: 480px) {
+            .status-card {
+                padding: 15px;
+            }
+            .badge {
+                font-size: 14px;
+                padding: 5px 10px;
+            }
+            .page-title {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 class="page-title">Device Connection Status</h2>
+        <hr class="divider" />
+
+        <div id="status-card" class="status-card">
+
+            <h4>Device ID: <span id="deviceId">@Model.DeviceId</span></h4>
+            <h5>Device Type: <span id="deviceType">@Model.DeviceType</span></h5>
+
+            <div id="connectionStatus" class="connection-status">
+                @if (Model.IsConnected)
+                {
+                    <span class="badge badge-connected">
+                        ✔ Device Connected
+                    </span>
+                }
+                else
+                {
+                    <span class="badge badge-disconnected">
+                        ✖ Device Not Connected
+                    </span>
+                }
+            </div>
+
+            <div id="lastUpdated" class="last-updated">
+                Last check: @DateTime.Now.ToString("HH:mm:ss")
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Auto-refresh every 2 seconds
+        setInterval(() => {
+            fetch('/DeviceStatus/IndexPartial')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById("status-card").innerHTML = html;
+                });
+        }, 2000);
+    </script>
+</body>
+</html>

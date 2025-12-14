@@ -1,0 +1,140 @@
+
+
+@model IEnumerable<SmartEnergy.Web.Models.HistoricalStat>
+@using Newtonsoft.Json
+
+@{
+    ViewData["Title"] = "Historical Stats";
+
+    var labelsList = Model.Select(m => m.Date.ToString("yyyy-MM-dd")).ToList();
+    var avgPowerList = Model.Select(m => m.AvgPower).ToList();
+    var peakPowerList = Model.Select(m => m.PeakPower).ToList();
+    var totalEnergyList = Model.Select(m => m.TotalEnergy).ToList();
+}
+
+<div class="card-like p-4">
+    <h4 class="page-title mb-4">
+        <i class="bi bi-bar-chart-line me-2"></i> Device Historical Statistics
+    </h4>
+
+    <!-- Date Filter -->
+    <form asp-action="Filter" method="post" class="row g-3 align-items-center mb-4">
+        <div class="col-auto">
+            <label class="col-form-label">Start Date:</label>
+        </div>
+        <div class="col-auto">
+            <input type="date" name="startDate" class="form-control" required />
+        </div>
+        <div class="col-auto">
+            <label class="col-form-label">End Date:</label>
+        </div>
+        <div class="col-auto">
+            <input type="date" name="endDate" class="form-control" required />
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary">Filter</button>
+        </div>
+    </form>
+
+    <!-- Chart -->
+    <div class="mb-4" style="height: 400px;">
+        <canvas id="historicalChart"></canvas>
+    </div>
+
+    <!-- Table -->
+    <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>#</th>
+                    <th>Device Name</th>
+                    <th>Date</th>
+                    <th>Average Power (W)</th>
+                    <th>Peak Power (W)</th>
+                    <th>Total Energy (kWh)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model != null && Model.Any())
+                {
+                    int index = 1;
+                    foreach (var stat in Model)
+                    {
+                        <tr>
+                            <td>@index</td>
+                            <td>@stat.Device?.Name</td>
+                            <td>@stat.Date.ToString("yyyy-MM-dd")</td>
+                            <td>@stat.AvgPower.ToString("N2")</td>
+                            <td>@stat.PeakPower.ToString("N2")</td>
+                            <td>@stat.TotalEnergy.ToString("N2")</td>
+                        </tr>
+                        index++;
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">No historical data available.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const labels = @Html.Raw(JsonConvert.SerializeObject(labelsList));
+    const avgPower = @Html.Raw(JsonConvert.SerializeObject(avgPowerList));
+    const peakPower = @Html.Raw(JsonConvert.SerializeObject(peakPowerList));
+    const totalEnergy = @Html.Raw(JsonConvert.SerializeObject(totalEnergyList));
+
+    const ctx = document.getElementById('historicalChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar', // ✅ switched to bar chart
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Avg Power (W)',
+                    data: avgPower,
+                    backgroundColor: 'rgba(59,130,246,0.8)', // blue
+                    borderRadius: 6,
+                    maxBarThickness: 30
+                },
+                {
+                    label: 'Peak Power (W)',
+                    data: peakPower,
+                    backgroundColor: 'rgba(239,68,68,0.8)', // red
+                    borderRadius: 6,
+                    maxBarThickness: 30
+                },
+                {
+                    label: 'Total Energy (kWh)',
+                    data: totalEnergy,
+                    backgroundColor: 'rgba(16,185,129,0.8)', // teal
+                    borderRadius: 6,
+                    maxBarThickness: 30
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top' },
+                title: { display: true, text: 'Energy Trends (Historical)' }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+
+
+
+

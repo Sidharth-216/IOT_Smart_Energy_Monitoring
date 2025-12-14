@@ -1,0 +1,19 @@
+@model SmartEnergy.Web.Models.Device
+
+@{
+    ViewData["Title"] = "Device Details";
+}
+
+<h2>@Model.Name - Details</h2>
+<hr />
+
+<ul class="list-group">
+    <li class="list-group-item"><strong>ID:</strong> @Model.DeviceId</li>
+    <li class="list-group-item"><strong>Status:</strong> @Model.Status</li>
+    <li class="list-group-item"><strong>Last Active:</strong> @Model.LastActive</li>
+    <li class="list-group-item"><strong>Firmware:</strong> @Model.FirmwareVersion</li>
+    <li class="list-group-item"><strong>IP Address:</strong> @Model.IPAddress</li>
+    <li class="list-group-item"><strong>SSID:</strong> @Model.SSID</li>
+</ul>
+
+<a class="btn btn-secondary mt-3" href="@Url.Action("Dashboard", "Device")">Back to Dashboard</a>

@@ -67,7 +67,49 @@ namespace SmartEnergy.Web.Services
         public void AddReading(EnergyReading reading)
         {
             _context.EnergyReadings.Add(reading);
+
+            var device = _context.Devices.FirstOrDefault(d => d.DeviceId == reading.DeviceId);
+            if (device != null)
+            {
+                device.LastActive = DateTime.Now;
+            }
+
             _context.SaveChanges();
         }
+
+        // ✅ Get latest N energy readings (for live table)
+        public IEnumerable<EnergyReading> GetLatestReadings(int count = 50)
+        {
+            return _context.EnergyReadings
+                .OrderByDescending(r => r.Timestamp)
+                .Take(count)
+                .ToList();
+        }
+        public void GenerateDailyHistoricalStats()
+        {
+            var yesterday = DateTime.UtcNow.Date.AddDays(-1);
+
+            var grouped = _context.EnergyReadings
+                .Where(r => r.Timestamp.Date == yesterday)
+                .GroupBy(r => r.DeviceId)
+                .Select(g => new HistoricalStat
+                {
+                    DeviceId = g.Key,
+                    Date = yesterday,
+                    AvgPower = g.Average(r => r.Power),
+                    PeakPower = g.Max(r => r.Power),
+                    // Assumption: 1-second sampling → Wh → kWh
+                    TotalEnergy = g.Sum(r => (r.Power / 3600.0f))  
+                })
+                .ToList();
+
+            if (grouped.Any())
+            {
+                _context.HistoricalStats.AddRange(grouped);
+                _context.SaveChanges();
+            }
+        }
+
+
     }
 }

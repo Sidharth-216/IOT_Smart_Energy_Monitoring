@@ -1,0 +1,175 @@
+@*@model IEnumerable<SmartEnergy.Web.Models.Alert>
+@{
+    ViewData["Title"] = "Alerts & Notifications";
+    string Badge(string sev) => sev?.ToLower() switch
+    {
+        "critical" => "badge-critical",
+        "warning" => "badge-warning",
+        _ => "badge-info"
+    };
+    string RowClass(string sev) => sev?.ToLower() switch
+    {
+        "critical" => "tr-critical",
+        "warning" => "tr-warning",
+        _ => ""
+    };
+}
+
+<div class="mb-3">
+    <h2 class="page-title">Alerts &amp; Notifications</h2>
+    <p class="page-sub">Review important notifications about your energy consumption.</p>
+</div>
+
+<div class="card-like p-3 p-md-4">
+    <h5 class="mb-1">Alert History</h5>
+    <p class="text-muted mb-3">Here is a list of recent alerts from your devices.</p>
+
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th style="width:50%">Message</th>
+                    <th>Severity</th>
+                    <th>Timestamp</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model != null && Model.Any())
+                {
+                    foreach (var a in Model.OrderByDescending(x => x.Timestamp))
+                    {
+                        <tr class="@RowClass(a.Severity)">
+                            <td>
+                                <i class="bi bi-arrow-repeat me-2 text-primary"></i>
+                                @a.Message
+                            </td>
+                            <td>
+                                <span class="@Badge(a.Severity)">
+                                    @(string.IsNullOrWhiteSpace(a.Severity) ? "Info" : a.Severity)
+                                </span>
+                            </td>
+                            <td>@a.Timestamp.ToString("g")</td>
+                            <td>
+                                @if (!string.Equals(a.Status, "Read", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    <a asp-action="MarkAsRead" asp-route-id="@a.AlertId" class="btn btn-link p-0">Mark as Read</a>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Read</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr><td colspan="4" class="text-center text-muted py-4">No alerts yet.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>*@
+
+@model IEnumerable<SmartEnergy.Web.Models.Alert>
+@{
+    ViewData["Title"] = "Alerts & Notifications";
+    string Badge(string sev) => sev?.ToLower() switch
+    {
+        "critical" => "badge-critical",
+        "warning" => "badge-warning",
+        _ => "badge-info"
+    };
+    string RowClass(string sev) => sev?.ToLower() switch
+    {
+        "critical" => "tr-critical",
+        "warning" => "tr-warning",
+        _ => ""
+    };
+}
+
+<div class="mb-3">
+    <h2 class="page-title">Alerts &amp; Notifications</h2>
+    <p class="page-sub">Review important notifications about your energy consumption.</p>
+</div>
+
+<div class="card-like p-3 p-md-4">
+    <h5 class="mb-1">Alert History</h5>
+    <p class="text-muted mb-3">Here is a list of recent alerts from your devices.</p>
+
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th style="width:50%">Message</th>
+                    <th>Severity</th>
+                    <th>Timestamp</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model != null && Model.Any())
+                {
+                    foreach (var a in Model.OrderByDescending(x => x.Timestamp))
+                    {
+                        <tr class="@RowClass(a.Severity)" id="alert-row-@a.AlertId">
+                            <td>
+                                <i class="bi bi-arrow-repeat me-2 text-primary"></i>
+                                @a.Message
+                            </td>
+                            <td>
+                                <span class="@Badge(a.Severity)">
+                                    @(string.IsNullOrWhiteSpace(a.Severity) ? "Info" : a.Severity)
+                                </span>
+                            </td>
+                            <td>@a.Timestamp.ToString("g")</td>
+                            <td>
+                                @if (!string.Equals(a.Status, "Read", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    <button class="btn btn-link p-0 text-primary mark-read-btn"
+                                            data-id="@a.AlertId">
+                                        Mark as Read
+                                    </button>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Read</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr><td colspan="4" class="text-center text-muted py-4">No alerts yet.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll(".mark-read-btn").forEach(btn => {
+            btn.addEventListener("click", function () {
+                const alertId = this.dataset.id;
+
+                fetch(/Alerts/MarkAsRead/${alertId}, {
+                    method: "POST"
+                })
+                .then(response => {
+                    if (response.ok) {
+                        // Replace button with "Read"
+                        const row = document.getElementById(alert-row-${alertId});
+                        const cell = row.querySelector("td:last-child");
+                        cell.innerHTML = <span class="text-muted">Read</span>;
+                    } else {
+                        alert("Failed to mark as read");
+                    }
+                })
+                .catch(err => console.error(err));
+            });
+        });
+    </script>
+}

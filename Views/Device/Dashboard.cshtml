@@ -1,0 +1,78 @@
+@*@model IEnumerable<SmartEnergy.Web.Models.Device>
+
+@{
+    ViewData["Title"] = "Device Dashboard";
+}
+
+<h2 class="mb-4">Device Management</h2>
+<p class="text-muted">Monitor status and manage sensors for your energy monitoring devices.</p>
+
+<div class="row">
+    @foreach (var device in Model)
+    {
+        <div class="col-md-4 mb-4">
+            <div class="card p-3 shadow-sm">
+                <h5 class="fw-bold">@device.Name</h5>
+                <p class="text-muted">Last active: @device.LastActive.ToString("g")</p>
+
+                <p>
+                    Status:
+                    @if (device.Status == "Online")
+                    {
+                        <span class="badge bg-success">Online</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger">Offline</span>
+                    }
+                </p>
+
+                <p><strong>Firmware:</strong> @device.FirmwareVersion</p>
+                <p><strong>IP:</strong> @device.IPAddress</p>
+                <p><strong>SSID:</strong> @device.SSID</p>
+
+                <a class="btn btn-primary btn-sm" href="@Url.Action("Details", "Device", new { id = device.DeviceId })">View Details</a>
+            </div>
+        </div>
+    }
+</div>*@
+
+
+@model IEnumerable<SmartEnergy.Web.Models.Device>
+
+@{
+    ViewData["Title"] = "Device Dashboard";
+}
+
+<h2 class="mb-4">Device Management</h2>
+<p class="text-muted">Monitor status and manage sensors for your energy monitoring devices.</p>
+
+<div class="row">
+    @foreach (var device in Model)
+    {
+        <div class="col-md-4 mb-4">
+            <div class="card p-3 shadow-sm">
+                <h5 class="fw-bold">@device.Name</h5>
+                <p class="text-muted">Last active: @device.LastActive.ToString("g")</p>
+
+                <p>
+                    Status:
+                    @if (device.Status == "Online")
+                    {
+                        <span class="badge bg-success">Online</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger">Offline</span>
+                    }
+                </p>
+
+                <p><strong>Firmware:</strong> @device.FirmwareVersion</p>
+                <p><strong>IP:</strong> @device.IPAddress</p>
+                <p><strong>SSID:</strong> @device.SSID</p>
+
+                <a class="btn btn-primary btn-sm" href="@Url.Action("Details", "Device", new { id = device.DeviceId })">View Details</a>
+            </div>
+        </div>
+    }
+</div>

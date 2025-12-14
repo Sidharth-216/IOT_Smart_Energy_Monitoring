@@ -13,5 +13,8 @@ namespace SmartEnergy.Web.Services
         IEnumerable<HistoricalStat> GetHistoricalStatsLastDays(int days);
         IEnumerable<HistoricalStat> GetHistoricalStatsByDateRange(DateTime start, DateTime end);
         void AddReading(EnergyReading reading);
+        IEnumerable<EnergyReading> GetLatestReadings(int count = 50);
+
     }
+
 }

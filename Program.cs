@@ -1,28 +1,35 @@
 using SmartEnergy.Web.Data;
 using Microsoft.EntityFrameworkCore;
-using SmartEnergy.Web.Services;   
+using SmartEnergy.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
-// Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<IDataService, DeviceService>();
 builder.Services.AddScoped<IAlertService, AlertService>();
 builder.Services.AddScoped<ISuggestionService, SuggestionService>();
-
-// Add AI service if needed
-
+builder.Services.AddHttpClient();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -30,6 +37,9 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+
+
+app.UseCors("AllowAll");
 
 app.UseAuthorization();
 

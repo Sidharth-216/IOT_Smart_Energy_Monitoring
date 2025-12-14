@@ -46,12 +46,24 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3MvRGV2aWNlL1N0YXR1cy5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[/home/sidhu/Desktop/SmartEnergy.Web/SmartEnergy.Web/Views/History/Details.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3MvSGlzdG9yeS9EZXRhaWxzLmNzaHRtbA==
+[/home/sidhu/Desktop/SmartEnergy.Web/SmartEnergy.Web/Views/DeviceStatus/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvRGV2aWNlU3RhdHVzL0luZGV4LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[/home/sidhu/Desktop/SmartEnergy.Web/SmartEnergy.Web/Views/History/Filter.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3MvSGlzdG9yeS9GaWx0ZXIuY3NodG1s
+[/home/sidhu/Desktop/SmartEnergy.Web/SmartEnergy.Web/Views/DeviceStatus/IndexPartial.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvRGV2aWNlU3RhdHVzL0luZGV4UGFydGlhbC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/sidhu/Desktop/SmartEnergy.Web/SmartEnergy.Web/Views/Energy/Live.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvRW5lcmd5L0xpdmUuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/sidhu/Desktop/SmartEnergy.Web/SmartEnergy.Web/Views/EnergyReadingView/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvRW5lcmd5UmVhZGluZ1ZpZXcvSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/sidhu/Desktop/SmartEnergy.Web/SmartEnergy.Web/Views/HistoricalStats/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvSGlzdG9yaWNhbFN0YXRzL0luZGV4LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [/home/sidhu/Desktop/SmartEnergy.Web/SmartEnergy.Web/Views/History/Index.cshtml]
@@ -64,6 +76,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [/home/sidhu/Desktop/SmartEnergy.Web/SmartEnergy.Web/Views/Home/Privacy.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3MvSG9tZS9Qcml2YWN5LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/sidhu/Desktop/SmartEnergy.Web/SmartEnergy.Web/Views/Llama/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvTGxhbWEvSW5kZXguY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
 [/home/sidhu/Desktop/SmartEnergy.Web/SmartEnergy.Web/Views/Shared/Error.cshtml]

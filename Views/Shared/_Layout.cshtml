@@ -1,49 +1,613 @@
-﻿<!DOCTYPE html>
+﻿@*
+@{
+    var ctrl = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var act = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+    Func<string, string> isActive = (name) => ctrl.Equals(name, StringComparison.OrdinalIgnoreCase) ? "active" : "";
+}
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - SmartEnergy.Web</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/SmartEnergy.Web.styles.css" asp-append-version="true" />
-</head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">SmartEnergy.Web</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] - Smart Energy</title>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2025 - SmartEnergy.Web - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="app-shell">
+
+    <!-- Mobile Navbar -->
+    <button class="btn btn-light d-md-none position-fixed top-0 start-0 m-2" 
+            id="sidebarToggle" style="z-index:1060;">
+        <i class="bi bi-list fs-3"></i>
+    </button>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebarMenu">
+        <button class="btn-close d-md-none ms-auto mb-3" id="sidebarClose" aria-label="Close"></button>
+
+        <div class="brand d-flex align-items-center mb-4">
+            <i class="bi bi-lightning-charge-fill me-2 text-success"></i>
+            <span class="fw-semibold text-white">WattWise</span>
         </div>
-    </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
+
+        <nav class="nav flex-column gap-1">
+            <a class="nav-link text-white @isActive("Home")" asp-controller="Home" asp-action="Index"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
+            <a class="nav-link text-white @isActive("Device")" asp-controller="Device" asp-action="Dashboard"><i class="bi bi-hdd-network me-2"></i>Devices</a>
+            <a class="nav-link text-white @isActive("History")" asp-controller="History" asp-action="Index"><i class="bi bi-clock-history me-2"></i>History</a>
+            <a class="nav-link text-white @isActive("HistoricalStats")" asp-controller="HistoricalStats" asp-action="Index"><i class="bi bi-clock-history me-2"></i>History 2</a>
+            <a class="nav-link text-white @isActive("Alert")" asp-controller="Alerts" asp-action="Index"><i class="bi bi-bell me-2"></i>Alerts</a>
+           @* <a class="nav-link text-white @isActive("EnergyReadingView")" asp-controller="EnergyReadingView" asp-action="Index"><i class="bi bi-lightbulb me-2"></i>Live Reading</a>*@*@*
+             <a class="nav-link text-white" asp-controller="Energy" asp-action="Live" class="bi bi-lightbulb me-2"><i class ="bi bi-lightbulb me-2"></i>Live Readings</a>
+            <a class="nav-link text-white @isActive("LlamaController")" asp-controller="Llama" asp-action="Index"><i class="bi bi-lightning me-2"></i>Suggestions</a>
+           
+
+        </nav>
+        <style>
+            .nav-link.text-white:hover, .nav-link.text-white:focus {
+            background-color: #22c55e !important; /* Tailwind green-500 */
+            color: #ffffff !important;
+            }
+            .nav-link.text-white.active {
+                background-color: #22c55e !important; /* Tailwind green-500 */
+                color: #ffffff !important;
+            }
+        </style>
+    </aside>
+
+    <!-- Main content -->
+    <main class="content">
+        <div class="container-fluid px-4 py-4">
+            @RenderBody()
+        </div>
+        @RenderSection("Scripts", required: false)
+    </main>
+
+    <script>
+        const sidebar = document.getElementById("sidebarMenu");
+        const toggleBtn = document.getElementById("sidebarToggle");
+        const closeBtn = document.getElementById("sidebarClose");
+
+        toggleBtn.addEventListener("click", () => {
+            sidebar.classList.toggle("show");
+        });
+
+        closeBtn.addEventListener("click", () => {
+            sidebar.classList.remove("show");
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+      
+
+a.navbar-brand {
+  white-space: normal;
+  text-align: center;
+  word-break: break-all;
+}
+
+a {
+  color:#0077cc;
+}
+
+.btn-primary {
+  color: #fff;
+  background-color: #1b6ec2;
+  border-color: #1861ac;
+}
+
+.nav-pills .nav-link.active, .nav-pills .show > .nav-link {
+  color: #fff;
+  background-color: #1b6ec2;
+  border-color: #1861ac;
+}
+
+.border-top {
+  border-top: 1px solid #e5e5e5;
+}
+.border-bottom {
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.box-shadow {
+  box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .05);
+}
+
+button.accept-policy {
+  font-size: 1rem;
+  line-height: inherit;
+}
+
+.footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  white-space: nowrap;
+  line-height: 60px;
+}
+.sidebar{
+  width: 260px;
+  background: #1E293B;
+  color: #E5E7EB;
+  padding: 20px 16px;
+  border-right: 1px solid #e6eef9;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+    </style>
+</body>
+</html>*@
+
+
+@{
+    var ctrl = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var act = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+    Func<string, string> isActive = (name) => ctrl.Equals(name, StringComparison.OrdinalIgnoreCase) ? "active" : "";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] - Smart Energy</title>
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Rajdhani', 'Segoe UI', sans-serif;
+            background: #0a0e27;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        /* Animated Background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(0, 255, 255, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(138, 43, 226, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(255, 0, 255, 0.05) 0%, transparent 50%);
+            z-index: -1;
+            animation: backgroundPulse 8s ease-in-out infinite;
+        }
+
+        @@keyframes backgroundPulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        .app-shell {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(180deg, rgba(26, 26, 46, 0.95) 0%, rgba(15, 15, 35, 0.95) 100%);
+            backdrop-filter: blur(10px);
+            padding: 30px 20px;
+            border-right: 2px solid rgba(0, 255, 255, 0.2);
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 1050;
+            transition: transform 0.3s ease;
+            box-shadow: 5px 0 30px rgba(0, 255, 255, 0.1);
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #00ffff, #8a2be2);
+            border-radius: 10px;
+        }
+
+        /* Brand */
+        .brand {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 0 30px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid rgba(0, 255, 255, 0.2);
+            position: relative;
+        }
+
+        .brand::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00ffff, transparent);
+            animation: brandGlow 2s ease-in-out infinite;
+        }
+
+        @@keyframes brandGlow {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .brand i {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #00ffff, #ff00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: iconPulse 2s ease-in-out infinite;
+            margin-right: 15px;
+        }
+
+        @@keyframes iconPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .brand span {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #00ffff, #8a2be2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* Navigation */
+        .nav {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 16px 20px;
+            color: #e0e0e0 !important;
+            text-decoration: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid transparent;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-link::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .nav-link:hover::before {
+            left: 100%;
+        }
+
+        .nav-link i {
+            font-size: 1.3rem;
+            transition: all 0.3s ease;
+            color: #f0ededff;
+        }
+
+        .nav-link:hover {
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.15), rgba(138, 43, 226, 0.15));
+            color: #ffffff !important;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            transform: translateX(8px);
+            box-shadow: 0 5px 20px rgba(0, 255, 255, 0.2);
+        }
+
+        .nav-link:hover i {
+            transform: scale(1.2) rotate(5deg);
+            color: #00ffff;
+        }
+
+        .nav-link.active {
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.25), rgba(138, 43, 226, 0.25));
+            color: #0d0b0bff !important;
+            border: 1px solid rgba(0, 255, 255, 0.5);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.3), inset 0 0 20px rgba(0, 255, 255, 0.1);
+            font-weight: 700;
+        }
+
+        .nav-link.active i {
+            color: #00ffff;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+            animation: iconGlow 2s ease-in-out infinite;
+        }
+
+        @@keyframes iconGlow {
+            0%, 100% { filter: drop-shadow(0 0 5px rgba(0, 255, 255, 0.6)); }
+            50% { filter: drop-shadow(0 0 15px rgba(0, 255, 255, 1)); }
+        }
+
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 8px;
+            height: 8px;
+            background: #00ffff;
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.8);
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @@keyframes pulse {
+            0%, 100% { transform: translateY(-50%) scale(1); opacity: 1; }
+            50% { transform: translateY(-50%) scale(1.3); opacity: 0.7; }
+        }
+
+        /* Main Content */
+        .content {
+            flex: 1;
+            margin-left: 280px;
+            min-height: 100vh;
+            transition: margin-left 0.3s ease;
+        }
+
+        /* Mobile Toggle Button */
+        #sidebarToggle {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1060;
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.3), rgba(138, 43, 226, 0.3));
+            border: 2px solid rgba(0, 255, 255, 0.5);
+            color: #00ffff;
+            border-radius: 12px;
+            padding: 12px 16px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            display: none;
+        }
+
+        #sidebarToggle:hover {
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.5), rgba(138, 43, 226, 0.5));
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.5);
+            transform: scale(1.05);
+        }
+
+        .btn-close {
+            filter: invert(1);
+            opacity: 0.8;
+            transition: all 0.3s ease;
+        }
+
+        .btn-close:hover {
+            opacity: 1;
+            transform: scale(1.2);
+        }
+
+        /* Mobile Responsive */
+        @@media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.show {
+                transform: translateX(0);
+            }
+
+            .content {
+                margin-left: 0;
+            }
+
+            #sidebarToggle {
+                display: block;
+            }
+
+            .brand span {
+                font-size: 1.5rem;
+            }
+
+            .nav-link {
+                font-size: 1rem;
+                padding: 14px 16px;
+            }
+        }
+
+        /* Overlay for mobile */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1040;
+            backdrop-filter: blur(5px);
+        }
+
+        .sidebar.show ~ .sidebar-overlay {
+            display: block;
+        }
+
+        /* Additional Enhancements */
+        .container-fluid {
+            animation: fadeIn 0.6s ease;
+        }
+
+        @@keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Scrollbar for main content */
+        .content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .content::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .content::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #00ffff, #8a2be2);
+            border-radius: 10px;
+        }
+
+        /* Status indicator */
+        .nav-link .status-indicator {
+            width: 6px;
+            height: 6px;
+            background: #00ff00;
+            border-radius: 50%;
+            margin-left: auto;
+            animation: blink 2s ease-in-out infinite;
+        }
+
+        @@keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+    </style>
+</head>
+<body class="app-shell">
+
+    <!-- Mobile Toggle Button -->
+    <button class="btn" id="sidebarToggle">
+        <i class="bi bi-list fs-3"></i>
+    </button>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebarMenu">
+        <button class="btn-close d-md-none ms-auto mb-3" id="sidebarClose" aria-label="Close"></button>
+
+        <div class="brand">
+            <i class="bi bi-lightning-charge-fill"></i>
+            <span>WattWise</span>
+        </div>
+
+        <nav class="nav flex-column">
+            <a class="nav-link @isActive("Home")" asp-controller="Home" asp-action="Index">
+                <i class="bi bi-speedometer2 me-2"></i>
+                Dashboard
+            </a>
+            @*<a class="nav-link @isActive("Device")" asp-controller="Device" asp-action="Dashboard">
+                <i class="bi bi-hdd-network me-2"></i>
+                Devices
+            </a>*@
+            <a class="nav-link @isActive("DeviceStatus")" asp-controller="DeviceStatus" asp-action="Index">
+                <i class="bi bi-hdd-network me-2"></i>
+                Devices Status
+            </a>
+            @*<a class="nav-link" asp-controller="DeviceStatus" asp-action="Index">Device Status</a>*@
+            <a class="nav-link @isActive("History")" asp-controller="History" asp-action="Index">
+                <i class="bi bi-clock-history me-2"></i>
+                Historys stats 
+            </a>
+            <a class="nav-link @isActive("HistoricalStats")" asp-controller="HistoricalStats" asp-action="Index">
+                <i class="bi bi-graph-up me-2"></i>
+                History
+            </a>
+            <a class="nav-link @isActive("Alert")" asp-controller="Alerts" asp-action="Index">
+                <i class="bi bi-bell me-2"></i>
+                Alerts
+            </a>
+            <a class="nav-link @isActive("Energy")" asp-controller="Energy" asp-action="Live">
+                <i class="bi bi-lightbulb me-2"></i>
+                Live Readings
+            </a>
+            <a class="nav-link @isActive("LlamaController")" asp-controller="Llama" asp-action="Index">
+                <i class="bi bi-lightning me-2"></i>
+                Suggestions
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main content -->
+    <main class="content">
+        <div class="container-fluid px-4 py-4">
+            @RenderBody()
+        </div>
+        @RenderSection("Scripts", required: false)
+    </main>
+
+    <!-- Overlay for mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <script>
+        const sidebar = document.getElementById("sidebarMenu");
+        const toggleBtn = document.getElementById("sidebarToggle");
+        const closeBtn = document.getElementById("sidebarClose");
+        const overlay = document.getElementById("sidebarOverlay");
+
+        function toggleSidebar() {
+            sidebar.classList.toggle("show");
+        }
+
+        toggleBtn?.addEventListener("click", toggleSidebar);
+        closeBtn?.addEventListener("click", toggleSidebar);
+        overlay?.addEventListener("click", toggleSidebar);
+
+        // Close sidebar when clicking on a nav link on mobile
+        const navLinks = document.querySelectorAll('.nav-link');
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.remove('show');
+                }
+            });
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -1,0 +1,784 @@
+
+
+<!--for LlamaController Llama/Index.html-->
+@model IEnumerable<SmartEnergy.Web.Models.Suggestion>
+@{
+    ViewData["Title"] = "AI-Powered Suggestions";
+}
+ <!-- Page Header -->
+    <div class="mb-4 page-header">
+        <h2 class="fw-bold text-gradient">⚡ AI-Powered Suggestions</h2>
+        <p class="header-subtitle">Get personalized tips to reduce your energy consumption.</p>
+    </div>
+<div class="live-page">
+    <div class="row g-4">
+        <!-- Voltage -->
+        <div class="col-lg-4 col-md-6">
+            <div class="live-card voltage-card">
+                <div class="live-card-top">
+                    <span class="live-title">Voltage</span>
+                    <span class="live-icon electric-pulse">⚡</span>
+                </div>
+                <div class="live-value" id="voltageVal">--</div>
+                <div class="live-sub">
+                    <span class="live-indicator"></span>
+                    Live
+                </div>
+            </div>
+        </div>
+
+        <!-- Current -->
+        <div class="col-lg-4 col-md-6">
+            <div class="live-card current-card">
+                <div class="live-card-top">
+                    <span class="live-title">Current</span>
+                    <span class="live-icon electric-pulse">↻</span>
+                </div>
+                <div class="live-value" id="currentVal">--</div>
+                <div class="live-sub">
+                    <span class="live-indicator"></span>
+                    Live
+                </div>
+            </div>
+        </div>
+
+        <!-- Power -->
+        <div class="col-lg-4 col-md-6">
+            <div class="live-card power-card">
+                <div class="live-card-top">
+                    <span class="live-title">Power</span>
+                    <span class="live-icon electric-pulse">📶</span>
+                </div>
+                <div class="live-value" id="powerVal">--</div>
+                <div class="live-sub">
+                    <span class="live-indicator"></span>
+                    Live
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-3 text-muted small last-update">
+        ⏱️ Last update: <span id="lastTime">—</span>
+    </div>
+</div>
+
+<div class="col-lg-12 mt-4">
+    <div class="live-card energy-card" id="energySuggestion">
+        <div class="live-card-top">
+            <span class="live-title">⚡ Energy Consumption</span>
+            <span class="live-icon">🌍</span>
+            <button onclick="analyzeNow()" class="analyze-btn">
+                <span class="btn-lightning">⚡</span>
+                Analyze Consumption
+            </button>
+        </div>
+        <div class="live-value" id="consumptionLevel">--</div>
+        <div class="live-sub consumption-tip" id="consumptionTip">Analyzing...</div>
+    </div>
+</div>
+
+
+<!-- Chat Section -->
+<div class="chat-card">
+    <div class="chat-header">
+        <i class="bi bi-robot me-2 robot-icon"></i> 
+        <b>AI Chat Assistant</b>
+        <div class="header-pulse"></div>
+    </div>
+
+    <div id="chatBox" class="chat-box"></div>
+
+    <div class="chat-input-bar">
+        <input type="text" id="userMessage" class="form-control chat-input" placeholder="Ask me anything about energy..." />
+        <button id="sendBtn" class="btn chat-send">
+            <i class="bi bi-send"></i>
+        </button>
+    </div>
+</div>
+
+
+@section Scripts {
+    <script>
+    // Firebase Config
+    const firebaseConfig = {
+        databaseURL: "https://esp32-testing-aec8b-default-rtdb.firebaseio.com" 
+    };
+
+    const app = firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    const deviceId = "ESP32-001";
+
+    function fetchLiveReading() {
+        const readingRef = database.ref('readings/' + deviceId);
+        readingRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                animateValue('voltage', data.voltage.toFixed(1));
+                animateValue('current', data.current.toFixed(4));
+                animateValue('power', data.power.toFixed(2));
+                animateValue('deviceType', data.deviceType || "Unknown");
+                const date = new Date(data.timestamp);
+                animateValue('timestamp', date.toLocaleTimeString());
+            }
+        });
+    }
+
+    function animateValue(id, newValue) {
+        const el = document.getElementById(id);
+        if (el.innerText !== newValue) {
+            el.style.transition = 'all 0.5s ease';
+            el.style.transform = 'scale(1.2)';
+            setTimeout(() => el.style.transform = 'scale(1)', 500);
+            el.innerText = newValue;
+        }
+    }
+
+    fetchLiveReading();
+</script>
+  <script>
+    // If you already define these elsewhere, keep only one copy.
+    const chatBox = document.getElementById("chatBox");
+    const userMessage = document.getElementById("userMessage");
+    const sendBtn = document.getElementById("sendBtn");
+
+    // 🔗 Your live-reading endpoint
+    const endpoint = '@Url.Action("Latest", "EnergyReadingView")';
+
+    // Small helper used in your UI
+    function fmt(val, unit, decimals) {
+        if (val === null || val === undefined) return '--';
+        return Number(val).toFixed(decimals) + ' ' + unit;
+    }
+
+    // ---- Chat ----
+    sendBtn.addEventListener("click", sendMessage);
+    userMessage.addEventListener("keypress", function (e) {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    function appendMessage(sender, message, isError = false) {
+        const div = document.createElement("div");
+        div.classList.add("chat-message", sender.toLowerCase());
+        if (isError) div.classList.add("error");
+        div.innerHTML = `<b>${sender}:</b> ${message}`;
+        chatBox.appendChild(div);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function sendMessage() {
+        const message = userMessage.value.trim();
+        if (!message) return;
+
+        appendMessage("You", message);
+        userMessage.value = "";
+
+        fetch("/Llama/Chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ Question: message }) // must match C# model property
+        })
+        .then(res => {
+            if (!res.ok) throw new Error("Network response was not ok");
+            return res.json();
+        })
+        .then(data => {
+            if (data.error) {
+                appendMessage("Error", data.error, true);
+            } else {
+                // data.reply expected from your Flask API
+                appendMessage("AI", data.reply ?? JSON.stringify(data));
+            }
+        })
+        .catch(err => {
+            appendMessage("Error", err.message, true);
+        });
+    } // ✅ CLOSE sendMessage properly
+
+    // ---- Live readings + analysis ----
+    async function refresh() {
+        try {
+            const res = await fetch(endpoint, { cache: 'no-store' });
+            if (!res.ok) return;
+
+            const d = await res.json();
+            if (!d.hasData) {
+                document.getElementById('lastTime').innerText = 'No data yet';
+                return;
+            }
+
+            document.getElementById('voltageVal').innerText = fmt(d.voltage, 'V', 1);
+            document.getElementById('currentVal').innerText = fmt(d.current, 'A', 1);
+            document.getElementById('powerVal').innerText   = fmt(d.power, 'kW', 2);
+            document.getElementById('lastTime').innerText   = new Date(d.timestamp).toLocaleString();
+
+            // Show analyzing while we fetch
+            const levelEl = document.getElementById('consumptionLevel');
+            const tipEl = document.getElementById('consumptionTip');
+            if (levelEl && tipEl) {
+                levelEl.innerText = 'Analyzing...';
+                tipEl.innerText = 'Analyzing...';
+            }
+
+            // 🔑 Send reading to backend for analysis
+            const analysisRes = await fetch("/Llama/AnalyzeReading", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    voltage: d.voltage,
+                    current: d.current,
+                    power: d.power
+                })
+            });
+
+            // If the controller returns plain text instead of JSON, this will throw
+            let analysis;
+            try {
+                analysis = await analysisRes.json();
+            } catch {
+                // Fallback: show raw text
+                const raw = await analysisRes.text();
+                if (levelEl) levelEl.innerText = '—';
+                if (tipEl) tipEl.innerText = raw || 'No tip available';
+                return;
+            }
+
+            // Supports both shapes:
+            // 1) { consumptionLevel, tip }
+            // 2) { reply } from AI
+            const level = analysis.consumptionLevel ?? '—';
+            const tip = analysis.tip ?? analysis.reply ?? 'No tip available';
+
+            if (levelEl) levelEl.innerText = level;
+            if (tipEl) tipEl.innerText = tip;
+
+        } catch (e) {
+            console.warn(e);
+            const levelEl = document.getElementById('consumptionLevel');
+            const tipEl = document.getElementById('consumptionTip');
+            if (levelEl) levelEl.innerText = 'Unavailable';
+            if (tipEl) tipEl.innerText = 'Could not fetch analysis';
+        }
+    }
+
+    // 🔁 Actually run it
+    refresh();
+    //setInterval(refresh, 3000);
+</script>
+
+    <script>
+        //AJAX endpoint , AJAX is used for live data display from Db (AJAX used as a frontend api which will only fetch data from Db)
+        const endpoint = '@Url.Action("Latest", "EnergyReadingView")';
+
+        function fmt(val, unit, decimals) {
+            if (val === null || val === undefined) return '--';
+            return Number(val).toFixed(decimals) + ' ' + unit;
+        }
+
+        async function refresh() {
+            try {
+                const res = await fetch(endpoint, { cache: 'no-store' });
+                if (!res.ok) return;
+
+                const d = await res.json();
+                if (!d.hasData) {
+                    document.getElementById('lastTime').innerText = 'No data yet';
+                    return;
+                }
+
+               // document.getElementById('readingIdVal').innerText = d.readingId ?? '--';
+                //document.getElementById('deviceIdVal').innerText  = d.deviceId ?? '--';
+                document.getElementById('voltageVal').innerText   = fmt(d.voltage, 'V', 1);
+                document.getElementById('currentVal').innerText   = fmt(d.current, 'A', 1);
+                document.getElementById('powerVal').innerText     = fmt(d.power, 'kW', 2);
+
+                document.getElementById('lastTime').innerText = new Date(d.timestamp).toLocaleString();
+            } catch (e) {
+                console.warn(e);
+            }
+        }
+
+        refresh();
+        setInterval(refresh, 3000); // refresh every 3s
+    </script>
+}
+
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600;700&display=swap');
+
+    * {
+        box-sizing: border-box;
+    }
+
+    /* Page Background with Electric Theme */
+    .live-page {
+        background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+        padding: 2rem 0;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .live-page::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: 
+            radial-gradient(circle at 20% 50%, rgba(0, 247, 255, 0.1) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(255, 215, 0, 0.1) 0%, transparent 50%);
+        pointer-events: none;
+    }
+
+    /* Header Styling */
+    .page-header {
+        text-align: center;
+        padding: 1.5rem 0;
+        background: linear-gradient(135deg, rgba(15, 32, 39, 0.9) 0%, rgba(44, 83, 100, 0.9) 100%);
+        border-radius: 20px;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 32px rgba(0, 247, 255, 0.2);
+        border: 1px solid rgba(0, 247, 255, 0.3);
+    }
+
+    .text-gradient {
+        background: linear-gradient(45deg, #00f7ff, #ffd700, #00f7ff);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: gradient-shift 3s ease infinite;
+        font-family: 'Orbitron', sans-serif;
+        letter-spacing: 2px;
+        text-shadow: 0 0 30px rgba(0, 247, 255, 0.5);
+    }
+
+    @@keyframes gradient-shift {
+        0%, 100% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+    }
+
+    .header-subtitle {
+        color: #a0d8e0;
+        font-size: 1.1rem;
+        margin-top: 0.5rem;
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* Live Cards with Electric Theme */
+    .live-card {
+        background: linear-gradient(145deg, rgba(20, 40, 60, 0.95) 0%, rgba(30, 50, 70, 0.95) 100%);
+        border: 2px solid rgba(0, 247, 255, 0.3);
+        border-radius: 20px;
+        padding: 28px;
+        box-shadow: 
+            0 8px 32px rgba(0, 0, 0, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .live-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(0, 247, 255, 0.1) 0%, transparent 70%);
+        animation: rotate-gradient 8s linear infinite;
+        pointer-events: none;
+    }
+
+    @@keyframes rotate-gradient {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .live-card:hover {
+        transform: translateY(-8px) scale(1.02);
+        border-color: rgba(0, 247, 255, 0.6);
+        box-shadow: 
+            0 16px 48px rgba(0, 247, 255, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+
+    /* Voltage Card - Blue Electric */
+    .voltage-card {
+        border-color: rgba(0, 157, 255, 0.5);
+    }
+    .voltage-card:hover {
+        border-color: rgba(0, 157, 255, 0.8);
+        box-shadow: 0 16px 48px rgba(0, 157, 255, 0.4);
+    }
+
+    /* Current Card - Cyan Electric */
+    .current-card {
+        border-color: rgba(0, 247, 255, 0.5);
+    }
+    .current-card:hover {
+        border-color: rgba(0, 247, 255, 0.8);
+        box-shadow: 0 16px 48px rgba(0, 247, 255, 0.4);
+    }
+
+    /* Power Card - Gold Electric */
+    .power-card {
+        border-color: rgba(255, 215, 0, 0.5);
+    }
+    .power-card:hover {
+        border-color: rgba(255, 215, 0, 0.8);
+        box-shadow: 0 16px 48px rgba(255, 215, 0, 0.4);
+    }
+
+    /* Energy Consumption Card */
+    .energy-card {
+        border-color: rgba(138, 255, 0, 0.5);
+        background: linear-gradient(145deg, rgba(15, 35, 50, 0.95) 0%, rgba(25, 55, 75, 0.95) 100%);
+    }
+    .energy-card:hover {
+        border-color: rgba(138, 255, 0, 0.8);
+        box-shadow: 0 16px 48px rgba(138, 255, 0, 0.4);
+    }
+
+    .live-card-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .live-title {
+        color: #00d4ff;
+        font-weight: 700;
+        font-size: 1rem;
+        font-family: 'Orbitron', sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+    }
+
+    .live-icon {
+        font-size: 1.8rem;
+        filter: drop-shadow(0 0 8px currentColor);
+    }
+
+    .electric-pulse {
+        animation: electric-pulse 2s ease-in-out infinite;
+    }
+
+    @@keyframes electric-pulse {
+        0%, 100% { 
+            transform: scale(1);
+            filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.8));
+        }
+        50% { 
+            transform: scale(1.2);
+            filter: drop-shadow(0 0 15px rgba(255, 215, 0, 1));
+        }
+    }
+
+    .live-value {
+        font-size: 2.5rem;
+        font-weight: 900;
+        color: #ffffff;
+        font-family: 'Orbitron', sans-serif;
+        text-shadow: 
+            0 0 10px rgba(0, 247, 255, 0.8),
+            0 0 20px rgba(0, 247, 255, 0.4);
+        letter-spacing: 2px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .live-sub {
+        color: #7dd3fc;
+        font-size: 0.95rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        position: relative;
+        z-index: 1;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .live-indicator {
+        width: 8px;
+        height: 8px;
+        background: #00ff88;
+        border-radius: 50%;
+        animation: pulse-dot 1.5s ease-in-out infinite;
+        box-shadow: 0 0 10px #00ff88;
+    }
+
+    @@keyframes pulse-dot {
+        0%, 100% { 
+            opacity: 1;
+            transform: scale(1);
+        }
+        50% { 
+            opacity: 0.5;
+            transform: scale(1.3);
+        }
+    }
+
+    .last-update {
+        text-align: center;
+        color: #7dd3fc;
+        font-weight: 600;
+        text-shadow: 0 0 5px rgba(125, 211, 252, 0.5);
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* Analyze Button */
+    .analyze-btn {
+        background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+        border: 2px solid #ffd700;
+        color: white;
+        padding: 10px 24px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-family: 'Orbitron', sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 
+            0 4px 15px rgba(255, 107, 53, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .analyze-btn:hover {
+        transform: translateY(-2px) scale(1.05);
+        box-shadow: 
+            0 8px 25px rgba(255, 107, 53, 0.6),
+            inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        border-color: #00f7ff;
+    }
+
+    .btn-lightning {
+        animation: lightning-flash 1.5s ease-in-out infinite;
+    }
+
+    @@keyframes lightning-flash {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.6; }
+    }
+
+    .consumption-tip {
+        font-size: 1.05rem;
+        line-height: 1.6;
+        margin-top: 0.5rem;
+    }
+
+    /* Chat Card Styling */
+    .chat-card {
+        max-width: 1700px;
+        margin: 30px auto;
+        background: linear-gradient(145deg, rgba(20, 40, 60, 0.95) 0%, rgba(30, 50, 70, 0.95) 100%);
+        border-radius: 20px;
+        border: 2px solid rgba(0, 247, 255, 0.3);
+        box-shadow: 
+            0 12px 40px rgba(0, 0, 0, 0.5),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        padding: 25px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .chat-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(0, 247, 255, 0.08) 0%, transparent 70%);
+        animation: rotate-gradient 10s linear infinite;
+        pointer-events: none;
+    }
+
+    .chat-header {
+        font-size: 1.3rem;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        color: #00f7ff;
+        font-family: 'Orbitron', sans-serif;
+        font-weight: 700;
+        text-shadow: 0 0 10px rgba(0, 247, 255, 0.6);
+        position: relative;
+        z-index: 1;
+        gap: 10px;
+    }
+
+    .robot-icon {
+        animation: robot-bounce 2s ease-in-out infinite;
+    }
+
+    @@keyframes robot-bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-5px); }
+    }
+
+    .header-pulse {
+        width: 10px;
+        height: 10px;
+        background: #00ff88;
+        border-radius: 50%;
+        margin-left: auto;
+        animation: pulse-dot 1.5s ease-in-out infinite;
+        box-shadow: 0 0 15px #00ff88;
+    }
+
+    .chat-box {
+        height: 350px;
+        overflow-y: auto;
+        background: rgba(10, 20, 30, 0.6);
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 15px;
+        border: 1px solid rgba(0, 247, 255, 0.2);
+        backdrop-filter: blur(10px);
+        position: relative;
+        z-index: 1;
+    }
+
+    .chat-box::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .chat-box::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 10px;
+    }
+
+    .chat-box::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, #00f7ff, #ffd700);
+        border-radius: 10px;
+    }
+
+    .chat-input-bar {
+        display: flex;
+        align-items: center;
+        background: rgba(10, 20, 30, 0.6);
+        border-radius: 12px;
+        padding: 8px;
+        border: 2px solid rgba(0, 247, 255, 0.3);
+        transition: all 0.3s ease;
+        position: relative;
+        z-index: 1;
+    }
+
+    .chat-input-bar:focus-within {
+        border-color: rgba(0, 247, 255, 0.6);
+        box-shadow: 0 0 20px rgba(0, 247, 255, 0.3);
+    }
+
+    .chat-input {
+        flex: 1;
+        border: none;
+        outline: none;
+        background: transparent;
+        color: #ffffff;
+        padding: 10px;
+        font-size: 1rem;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .chat-input::placeholder {
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    .chat-send {
+        background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 10px 20px;
+        margin-left: 10px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+        font-weight: 700;
+    }
+
+    .chat-send:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 20px rgba(255, 107, 53, 0.6);
+    }
+
+    /* Chat Messages */
+    .chat-message {
+        margin: 12px 0;
+        padding: 12px 18px;
+        border-radius: 16px;
+        max-width: 70%;
+        word-wrap: break-word;
+        font-family: 'Inter', sans-serif;
+        animation: message-slide-in 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    @@keyframes message-slide-in {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .chat-message.you {
+        background: linear-gradient(135deg, #0084ff 0%, #00a8ff 100%);
+        color: white;
+        margin-left: auto;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .chat-message.ai {
+        background: linear-gradient(135deg, rgba(0, 247, 255, 0.2) 0%, rgba(0, 247, 255, 0.1) 100%);
+        color: #e0f7ff;
+        margin-right: auto;
+        border: 1px solid rgba(0, 247, 255, 0.3);
+    }
+
+    .chat-message.error {
+        background: linear-gradient(135deg, rgba(255, 0, 0, 0.3) 0%, rgba(255, 0, 0, 0.2) 100%);
+        color: #ffcccc;
+        margin-right: auto;
+        border: 1px solid rgba(255, 0, 0, 0.4);
+    }
+
+    /* Responsive Design */
+    @@media (max-width: 768px) {
+        .live-value {
+            font-size: 2rem;
+        }
+
+        .chat-header {
+            font-size: 1.1rem;
+        }
+
+        .chat-box {
+            height: 250px;
+        }
+
+        .live-card {
+            padding: 20px;
+        }
+    }
+</style>

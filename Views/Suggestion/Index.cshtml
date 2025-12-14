@@ -1,0 +1,134 @@
+@model IEnumerable<SmartEnergy.Web.Models.Suggestion>
+
+@{
+    ViewData["Title"] = "Suggestions";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    body {
+        font-family: 'Segoe UI', sans-serif;
+        background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+        margin: 0;
+        padding: 0;
+    }
+
+    h2 {
+        text-align: center;
+        margin: 40px 0 20px;
+        font-size: 2.2rem;
+        color: #3f3f44;
+        letter-spacing: 1px;
+    }
+
+    .text-end {
+        display: flex;
+        justify-content: flex-end;
+        padding: 0 40px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(120deg, #89f7fe 0%, #66a6ff 100%);
+        border: none;
+        color: #fff;
+        font-weight: 600;
+        padding: 10px 18px;
+        border-radius: 8px;
+        transition: all 0.3s ease-in-out;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(120deg, #66a6ff 0%, #89f7fe 100%);
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    table {
+        width: 90%;
+        margin: 0 auto 60px;
+        border-collapse: separate;
+        border-spacing: 0;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.05);
+        border-radius: 12px;
+        overflow: hidden;
+        background: #ffffff;
+    }
+
+    thead {
+        background: linear-gradient(to right, #2193b0, #6dd5ed);
+        color: white;
+    }
+
+    th, td {
+        padding: 16px 20px;
+        text-align: left;
+        font-size: 1rem;
+    }
+
+    tbody tr {
+        transition: background 0.3s ease;
+    }
+
+    tbody tr:hover {
+        background: #f0f8ff;
+    }
+
+    td em {
+        color: #999;
+        font-style: italic;
+    }
+
+    td {
+        color: #3c3c3c;
+        border-bottom: 1px solid #f0f0f0;
+    }
+</style>
+
+<h2>Suggestions</h2>
+
+<div class="text-end mb-3">
+    <a asp-action="Add" class="btn btn-primary">Create New Suggestion</a>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Text</th>
+            <th>Source</th>
+            <th>Created At</th>
+            <th>Rating</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model != null && Model.Any())
+        {
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.SuggestionId</td>
+                    <td>@item.Text</td>
+                    <td>@item.Source</td>
+                    <td>@item.CreatedAt.ToString("dd MMM yyyy hh:mm tt")</td>
+                    <td>
+                        @if (item.Rating.HasValue)
+                        {
+                            @item.Rating
+                        }
+                        else
+                        {
+                            <em>Not Rated</em>
+                        }
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="5" class="text-center">No suggestions available.</td>
+            </tr>
+        }
+    </tbody>
+</table>
+

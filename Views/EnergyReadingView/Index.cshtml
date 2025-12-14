@@ -1,0 +1,486 @@
+@*@{
+    ViewData["Title"] = "Live Readings";
+}
+
+<div class="live-page">
+    <div class="row g-4">
+        <!-- Reading ID -->
+        <div class="col-lg-4 col-md-6">
+            <div class="live-card">
+                <div class="live-card-top">
+                    <span class="live-title">Reading ID</span>
+                    <span class="live-icon">#️⃣</span>
+                </div>
+                <div class="live-value" id="readingIdVal">--</div>
+                <div class="live-sub">Live</div>
+            </div>
+        </div>
+
+        <!-- Device ID -->
+        <div class="col-lg-4 col-md-6">
+            <div class="live-card">
+                <div class="live-card-top">
+                    <span class="live-title">Device ID</span>
+                    <span class="live-icon">💡</span>
+                </div>
+                <div class="live-value" id="deviceIdVal">--</div>
+                <div class="live-sub">Live</div>
+            </div>
+        </div>
+
+        <!-- Voltage -->
+        <div class="col-lg-4 col-md-6">
+            <div class="live-card">
+                <div class="live-card-top">
+                    <span class="live-title">Voltage</span>
+                    <span class="live-icon">⚡</span>
+                </div>
+                <div class="live-value" id="voltageVal">--</div>
+                <div class="live-sub">Live</div>
+            </div>
+        </div>
+
+        <!-- Current -->
+        <div class="col-lg-4 col-md-6">
+            <div class="live-card">
+                <div class="live-card-top">
+                    <span class="live-title">Current</span>
+                    <span class="live-icon">↻</span>
+                </div>
+                <div class="live-value" id="currentVal">--</div>
+                <div class="live-sub">Live</div>
+            </div>
+        </div>
+
+        <!-- Power -->
+        <div class="col-lg-4 col-md-6">
+            <div class="live-card">
+                <div class="live-card-top">
+                    <span class="live-title">Power</span>
+                    <span class="live-icon">📶</span>
+                </div>
+                <div class="live-value" id="powerVal">--</div>
+                <div class="live-sub">Live</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-3 text-muted small">
+        Last update: <span id="lastTime">—</span>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        //AJAX endpoint , AJAX is used for live data display from Db (AJAX used as a frontend api which will only fetch data from Db)
+        const endpoint = '@Url.Action("Latest", "EnergyReadingView")';
+
+        function fmt(val, unit, decimals) {
+            if (val === null || val === undefined) return '--';
+            return Number(val).toFixed(decimals) + ' ' + unit;
+        }
+
+        async function refresh() {
+            try {
+                const res = await fetch(endpoint, { cache: 'no-store' });
+                if (!res.ok) return;
+
+                const d = await res.json();
+                if (!d.hasData) {
+                    document.getElementById('lastTime').innerText = 'No data yet';
+                    return;
+                }
+
+                document.getElementById('readingIdVal').innerText = d.readingId ?? '--';
+                document.getElementById('deviceIdVal').innerText  = d.deviceId ?? '--';
+                document.getElementById('voltageVal').innerText   = fmt(d.voltage, 'V', 1);
+                document.getElementById('currentVal').innerText   = fmt(d.current, 'A', 1);
+                document.getElementById('powerVal').innerText     = fmt(d.power, 'kW', 2);
+
+                document.getElementById('lastTime').innerText = new Date(d.timestamp).toLocaleString();
+            } catch (e) {
+                console.warn(e);
+            }
+        }
+
+        refresh();
+        setInterval(refresh, 3000); // refresh every 3s
+    </script>
+}
+<style>
+    .live-page {
+    background: #d7f8f8;
+    padding: 0.5rem 0 2rem 0;
+}
+.live-card {
+    background: #fff;
+    border: 1px solid rgba(0,0,0,.06);
+    border-radius: 18px;
+    padding: 22px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.04);
+    height: 100%;
+}
+.live-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: .35rem;
+}
+.live-title {
+    color: #7b6d66;
+    font-weight: 600;
+}
+.live-icon {
+    color: #f1ae55;
+    font-size: 1.2rem;
+}
+.live-value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #3b2e2a;
+}
+.live-sub {
+    color: #a08f86;
+    font-size: .9rem;
+}
+
+</style>*@
+
+
+@{
+    ViewData["Title"] = "Live Readings";
+}
+
+<div class="live-page">
+    <div class="row g-4">
+        <!-- Reading ID -->
+        <div class="col-lg-4 col-md-6">
+            <div class="live-card">
+                <div class="live-card-top">
+                    <span class="live-title">Reading ID</span>
+                    <span class="live-icon">#️⃣</span>
+                </div>
+                <div class="live-value" id="readingIdVal">--</div>
+                <div class="live-sub">Live</div>
+            </div>
+        </div>
+
+        <!-- Device ID -->
+        <div class="col-lg-4 col-md-6">
+            <div class="live-card">
+                <div class="live-card-top">
+                    <span class="live-title">Device ID</span>
+                    <span class="live-icon">💡</span>
+                </div>
+                <div class="live-value" id="deviceIdVal">--</div>
+                <div class="live-sub">Live</div>
+            </div>
+        </div>
+
+        <!-- Voltage -->
+        <div class="col-lg-4 col-md-6">
+            <div class="live-card">
+                <div class="live-card-top">
+                    <span class="live-title">Voltage</span>
+                    <span class="live-icon">⚡</span>
+                </div>
+                <div class="live-value" id="voltageVal">--</div>
+                <div class="live-sub">Live</div>
+            </div>
+        </div>
+
+        <!-- Current -->
+        <div class="col-lg-4 col-md-6">
+            <div class="live-card">
+                <div class="live-card-top">
+                    <span class="live-title">Current</span>
+                    <span class="live-icon">↻</span>
+                </div>
+                <div class="live-value" id="currentVal">--</div>
+                <div class="live-sub">Live</div>
+            </div>
+        </div>
+
+        <!-- Power -->
+        <div class="col-lg-4 col-md-6">
+            <div class="live-card">
+                <div class="live-card-top">
+                    <span class="live-title">Power</span>
+                    <span class="live-icon">📶</span>
+                </div>
+                <div class="live-value" id="powerVal">--</div>
+                <div class="live-sub">Live</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-3 text-muted small">
+        Last update: <span id="lastTime">—</span>
+    </div>
+
+    <!-- NEW Live Graph Section -->
+    <div class="mt-4">
+        <div class="chart-card">
+            <h4>Voltage Trend</h4>
+            <canvas id="voltageChart"></canvas>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const chartEndpoint = '@Url.Action("GetChartData", "Home")';
+
+    const ctx = document.getElementById('voltageChart').getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: { labels: [], datasets: [] },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    suggestedMin: 180,
+                    suggestedMax: 250,
+                    title: { display: true, text: 'Voltage (V)' }
+                }
+            },
+            plugins: {
+                legend: { position: 'bottom' }
+            },
+            elements: { line: { tension: 0.25 } }
+        }
+    });
+
+    async function refreshChart() {
+        try {
+            const res = await fetch(chartEndpoint, { cache: 'no-store' });
+            if (!res.ok) return;
+            const payload = await res.json();
+            if (!payload.hasData) return;
+
+            chart.data.labels = payload.labels;
+            chart.data.datasets = [];
+
+            payload.series.forEach((s, i) => {
+                chart.data.datasets.push({
+                    label: s.device || `Device ${s.deviceId}`,
+                    data: s.values,
+                    borderColor: ['#ff6384', '#4bc04b', '#5096ff'][i % 3],
+                    pointRadius: 0,
+                    fill: false
+                });
+            });
+
+            payload.thresholds.forEach(v => {
+                chart.data.datasets.push({
+                    label: `TH: ${v} V`,
+                    data: Array(payload.labels.length).fill(v),
+                    borderColor: 'orange',
+                    borderDash: [6, 6],
+                    pointRadius: 0,
+                    fill: false,
+                    tension: 0
+                });
+            });
+
+            chart.update('none');
+        } catch (e) {
+            console.error('Chart fetch failed', e);
+        }
+    }
+
+    refreshChart();
+    setInterval(refreshChart, 3000);
+</script>
+
+
+    <script>
+        //AJAX endpoint , AJAX is used for live data display from Db (AJAX used as a frontend api which will only fetch data from Db)
+        const endpoint = '@Url.Action("Latest", "EnergyReadingView")';
+
+        function fmt(val, unit, decimals) {
+            if (val === null || val === undefined) return '--';
+            return Number(val).toFixed(decimals) + ' ' + unit;
+        }
+
+        async function refresh() {
+            try {
+                const res = await fetch(endpoint, { cache: 'no-store' });
+                if (!res.ok) return;
+
+                const d = await res.json();
+                if (!d.hasData) {
+                    document.getElementById('lastTime').innerText = 'No data yet';
+                    return;
+                }
+
+                document.getElementById('readingIdVal').innerText = d.readingId ?? '--';
+                document.getElementById('deviceIdVal').innerText  = d.deviceId ?? '--';
+                document.getElementById('voltageVal').innerText   = fmt(d.voltage, 'V', 1);
+                document.getElementById('currentVal').innerText   = fmt(d.current, 'A', 1);
+                document.getElementById('powerVal').innerText     = fmt(d.power, 'kW', 2);
+
+                document.getElementById('lastTime').innerText = new Date(d.timestamp).toLocaleString();
+            } catch (e) {
+                console.warn(e);
+            }
+        }
+
+        refresh();
+        setInterval(refresh, 3000); // refresh every 3s
+    </script>
+    
+    
+}
+@*@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <script>
+        //AJAX endpoint , AJAX is used for live data display from Db (AJAX used as a frontend api which will only fetch data from Db)
+        const endpoint = '@Url.Action("Latest", "EnergyReadingView")';
+        const chartEndpoint = '/api/EnergyApi/latest-voltages?seconds=180';
+
+        function fmt(val, unit, decimals) {
+            if (val === null || val === undefined) return '--';
+            return Number(val).toFixed(decimals) + ' ' + unit;
+        }
+
+        async function refresh() {
+            try {
+                const res = await fetch(endpoint, { cache: 'no-store' });
+                if (!res.ok) return;
+
+                const d = await res.json();
+                if (!d.hasData) {
+                    document.getElementById('lastTime').innerText = 'No data yet';
+                    return;
+                }
+
+                document.getElementById('readingIdVal').innerText = d.readingId ?? '--';
+                document.getElementById('deviceIdVal').innerText  = d.deviceId ?? '--';
+                document.getElementById('voltageVal').innerText   = fmt(d.voltage, 'V', 1);
+                document.getElementById('currentVal').innerText   = fmt(d.current, 'A', 1);
+                document.getElementById('powerVal').innerText     = fmt(d.power, 'kW', 2);
+
+                document.getElementById('lastTime').innerText = new Date(d.timestamp).toLocaleString();
+            } catch (e) {
+                console.warn(e);
+            }
+        }
+
+        refresh();
+        setInterval(refresh, 3000); // refresh every 3s
+    </script>
+     <script>
+         const chartEndpoint = '@Url.Action("GetChartData", "Home")';
+
+    const ctx = document.getElementById('voltageChart').getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: { labels: [], datasets: [] },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    suggestedMin: 180,
+                    suggestedMax: 250,
+                    title: { display: true, text: 'Voltage (V)' }
+                }
+            },
+            plugins: {
+                legend: { position: 'bottom' }
+            },
+            elements: { line: { tension: 0.25 } }
+        }
+    });
+
+    async function refreshChart() {
+        try {
+            const res = await fetch(chartEndpoint, { cache: 'no-store' });
+            if (!res.ok) return;
+            const payload = await res.json();
+            if (!payload.hasData) return;
+
+            chart.data.labels = payload.labels;
+            chart.data.datasets = [];
+
+            payload.series.forEach((s, i) => {
+                chart.data.datasets.push({
+                    label: s.device || `Device ${s.deviceId}`,
+                    data: s.values,
+                    borderColor: ['#ff6384', '#4bc04b', '#5096ff'][i % 3],
+                    pointRadius: 0,
+                    fill: false
+                });
+            });
+
+            payload.thresholds.forEach(v => {
+                chart.data.datasets.push({
+                    label: `TH: ${v} V`,
+                    data: Array(payload.labels.length).fill(v),
+                    borderColor: 'orange',
+                    borderDash: [6, 6],
+                    pointRadius: 0,
+                    fill: false,
+                    tension: 0
+                });
+            });
+
+            chart.update('none');
+        } catch (e) {
+            console.error('Chart fetch failed', e);
+        }
+    }
+
+    refreshChart();
+    setInterval(refreshChart, 3000);
+     </script>
+}*@
+
+<style>
+    .live-page {
+        background: #d7f8f8;
+        padding: 0.5rem 0 2rem 0;
+    }
+    .live-card {
+        background: #fff;
+        border: 1px solid rgba(0,0,0,.06);
+        border-radius: 18px;
+        padding: 22px;
+        box-shadow: 0 2px 10px rgba(0,0,0,.04);
+        height: 100%;
+    }
+    .live-card-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: .35rem;
+    }
+    .live-title {
+        color: #7b6d66;
+        font-weight: 600;
+    }
+    .live-icon {
+        color: #f1ae55;
+        font-size: 1.2rem;
+    }
+    .live-value {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #3b2e2a;
+    }
+    .live-sub {
+        color: #a08f86;
+        font-size: .9rem;
+    }
+    .chart-card {
+        background:#fff;
+        border-radius:12px;
+        padding:20px;
+        box-shadow:0 2px 8px rgba(0,0,0,.05);
+        height:420px;
+    }
+    #voltageChart { width:100%; height:100%; }
+</style>
